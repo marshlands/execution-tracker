@@ -1,0 +1,13 @@
+# Execution Tracker Configuration
+# Copy this file to ~/.config/execution-tracker/config.toml (or $XDG_CONFIG_HOME)
+
+[fragmentation]
+# These control when you see "MILD" vs "HIGH" fragmentation warnings.
+# Tune to your personal working style ("geometry").
+mild_threshold = 5.0
+high_threshold = 8.5
+rapid_switch_window_minutes = 120   # How close in time two different vectors count as a "switch"
+
+[git]
+auto_project = true                 # When logging without -p, auto-use the git repo folder/remote name
+default_vectors = ["coding"]        # Vectors used by `et git import` unless overridden with -v
