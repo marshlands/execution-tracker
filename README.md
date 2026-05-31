@@ -2,7 +2,9 @@
 
 > Log what you ship. Understand your output vectors. Stop fragmenting your attention.
 
-`et` is a dead-simple, local-first CLI for knowledge workers and builders who want to **see the shape of their days** — not just count commits or hours.
+`et` is a dead-simple, **local-first** CLI for knowledge workers and builders who want to **see the shape of their days** — not just count commits or hours.
+
+> **Your data never leaves your machine.** The GitHub repository contains only the tool. Your actual logs live in `~/.local/share/execution-tracker/ships.db` and are excluded from git.
 
 ## Why This Exists
 
@@ -15,6 +17,61 @@ When you ship 7 small things across 6 different projects in one day, your brain 
 - **Ship**: A discrete thing you finished and put into the world (a PR, a doc, a migration, a design decision, a tough email thread, etc.).
 - **Output Vector**: A dimension of your work (`backend`, `infra`, `writing`, `research`, `design`, `ops`, `mentoring`...). You define them.
 - **Fragmentation**: Spreading yourself across too many vectors or projects without deep focus. `et` calculates a score and gives you warnings + suggestions.
+
+## Data Storage & Privacy
+
+`et` is **local-first by design**. Nothing you log ever leaves your machine unless you explicitly export it.
+
+### Where your data lives
+
+| What            | Default Location                                      | Notes                     |
+|-----------------|-------------------------------------------------------|---------------------------|
+| Ships & history | `~/.local/share/execution-tracker/ships.db`           | SQLite with WAL mode      |
+| Focus state     | `~/.local/share/execution-tracker/state.json`         | Your current deep thread  |
+| Configuration   | `~/.config/execution-tracker/config.toml`             | Optional, user-controlled |
+
+The data directory respects the standard `XDG_DATA_HOME` environment variable if you want to relocate it.
+
+### What actually gets stored
+
+Only what **you** explicitly create with `et log` (or `et git import`):
+
+- Description, timestamp, vectors, project, impact level, duration
+- Optional metadata (e.g. git commit SHA when importing)
+
+No system monitoring, no keystroke logging, no network calls, and **zero telemetry**.
+
+### Git & GitHub safety
+
+The repository contains **only the tool** — source code, documentation, examples, and build history.
+
+Your personal execution data is explicitly excluded in [`.gitignore`](.gitignore):
+
+- `*.db`, `*.db-wal`, `*.db-shm`
+- The `data/` directory
+- `.venv/`
+
+This means it is completely safe to clone, develop on, and push this repository (public or private). Your real history — client work, workouts, deep focus sessions, everything — stays on your machine.
+
+### Inspecting, backing up, or migrating your data
+
+```bash
+# Explore your ships
+sqlite3 ~/.local/share/execution-tracker/ships.db ".tables"
+sqlite3 ~/.local/share/execution-tracker/ships.db "
+  SELECT datetime(timestamp, 'localtime'), description, project 
+  FROM ships 
+  ORDER BY timestamp DESC 
+  LIMIT 20;
+"
+
+# Simple backup
+cp -r ~/.local/share/execution-tracker ~/backups/execution-tracker-$(date +%F)
+```
+
+You fully own your data. Delete the directory to start over. Copy it to move to another machine. Query it with any SQLite tool.
+
+No accounts. No cloud. No surprises.
 
 ## Quick Start
 
@@ -106,13 +163,6 @@ The score is intentionally simple and transparent:
 You can customize these values (and the rapid-switch window) in the config file.
 
 The suggestions are generated from the same data. Over time this can become smarter.
-
-## Data & Privacy
-
-- Everything lives in `~/.local/share/execution-tracker/ships.db` (SQLite + WAL).
-- A tiny `state.json` stores your current focus thread.
-- No network calls. No accounts. No telemetry.
-- You own the data completely. You can query it with `sqlite3`, `jq`, or scripts.
 
 ## Git Integration
 

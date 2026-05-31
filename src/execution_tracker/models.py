@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -16,7 +17,12 @@ class Impact(str, Enum):
 
 
 class Ship(BaseModel):
-    """A single completed output / 'ship'."""
+    """A single completed output / 'ship'.
+
+    The `metadata` field supports arbitrary JSON-serializable values
+    (strings, numbers, booleans, nested objects, etc.). It is intended
+    for tool-specific extra information (e.g. git SHA, time taken, etc.).
+    """
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -25,7 +31,7 @@ class Ship(BaseModel):
     impact: Impact = Impact.MEDIUM
     duration_minutes: int | None = None
     vectors: list[str] = Field(default_factory=list)
-    metadata: dict[str, str] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("vectors")
     @classmethod
@@ -48,6 +54,15 @@ class Ship(BaseModel):
             raise ValueError("Description cannot be empty")
         return v
 
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def ensure_metadata_is_dict(cls, v: Any) -> dict[str, Any]:
+        if v is None:
+            return {}
+        if isinstance(v, dict):
+            return v
+        return {}
+
     def primary_vector(self) -> str | None:
         return self.vectors[0] if self.vectors else None
 
@@ -62,6 +77,8 @@ class DailySummary(BaseModel):
     by_impact: dict[str, int]
     unique_vectors: int
     unique_projects: int
+    vectors_outside_focus: int = 0
+    projects_outside_focus: int = 0
     fragmentation_score: float  # 0.0 (focused) .. higher = more fragmented
     ships: list[Ship] = Field(default_factory=list)  # detailed for display
 

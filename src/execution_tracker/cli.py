@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Annotated
 
@@ -166,12 +166,24 @@ def _show_today(storage: Storage, just_logged: str | None = None) -> None:
         console.print("[dim]No ships logged yet today.[/dim]")
 
     # Quick stats
-    stats = (
-        f"[bold]{summary.total_ships}[/bold] ships  •  "
-        f"[bold]{summary.unique_vectors}[/bold] vectors  •  "
-        f"[bold]{summary.unique_projects}[/bold] projects  •  "
-        f"frag score [bold]{summary.fragmentation_score}[/bold]"
-    )
+    outside_vec = getattr(summary, "vectors_outside_focus", summary.unique_vectors)
+    outside_proj = getattr(summary, "projects_outside_focus", summary.unique_projects)
+
+    if outside_vec < summary.unique_vectors or outside_proj < summary.unique_projects:
+        stats = (
+            f"[bold]{summary.total_ships}[/bold] ships  •  "
+            f"[bold]{summary.unique_vectors}[/bold] vectors  •  "
+            f"[bold]{outside_vec}[/bold] outside focus  •  "
+            f"[bold]{outside_proj}[/bold] project{'s' if outside_proj != 1 else ''} outside focus  •  "
+            f"frag score [bold]{summary.fragmentation_score}[/bold]"
+        )
+    else:
+        stats = (
+            f"[bold]{summary.total_ships}[/bold] ships  •  "
+            f"[bold]{summary.unique_vectors}[/bold] vectors  •  "
+            f"[bold]{summary.unique_projects}[/bold] projects  •  "
+            f"frag score [bold]{summary.fragmentation_score}[/bold]"
+        )
     console.print(stats)
 
     # Fragmentation warning
@@ -279,7 +291,7 @@ def set_focus(
         console.print("[yellow]Focus cleared.[/yellow]")
         return
 
-    focus = FocusState(thread=thread.strip(), started_at=datetime.now())
+    focus = FocusState(thread=thread.strip(), started_at=datetime.now(timezone.utc))
     save_focus(focus)
     console.print(f"[bold blue]Focus set:[/bold blue] {focus.thread}")
     console.print("[dim]Future logs that don't align will be flagged more strongly.[/dim]")

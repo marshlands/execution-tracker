@@ -45,9 +45,9 @@ dev = [
 et = "execution_tracker.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/example/execution-tracker"
-Repository = "https://github.com/example/execution-tracker"
-Issues = "https://github.com/example/execution-tracker/issues"
+Homepage = "https://github.com/marshlands/execution-tracker"
+Repository = "https://github.com/marshlands/execution-tracker"
+Issues = "https://github.com/marshlands/execution-tracker/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/execution_tracker"]
